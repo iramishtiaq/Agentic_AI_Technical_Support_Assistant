@@ -1,6 +1,6 @@
 # 🤖 Agentic Technical Support Assistant
 
-## 📌 Project Overview
+##  Project Overview
 
 This project implements an **Agentic Retrieval-Augmented Generation (RAG)** system using **LangGraph**, **LangChain**, **OpenAI GPT**, **ChromaDB**, and **Streamlit**.
 
@@ -8,7 +8,7 @@ The application acts as an intelligent technical support assistant for the **Ori
 
 ---
 
-## 🚀 Features
+##  Features
 
 - Multi-Agent workflow using LangGraph
 - Query Rewriting Agent
@@ -21,7 +21,7 @@ The application acts as an intelligent technical support assistant for the **Ori
 
 ---
 
-## 🏗️ Project Architecture
+## Project Architecture
 
 ```text
                  User Question
@@ -50,7 +50,7 @@ The application acts as an intelligent technical support assistant for the **Ori
 
 ---
 
-## 📂 Project Structure
+##  Project Structure
 
 ```text
 Agentic_AI_Assignment/
@@ -66,7 +66,7 @@ Agentic_AI_Assignment/
 
 ---
 
-## 🛠️ Technologies Used
+## Technologies Used
 
 - Python
 - LangChain
@@ -82,7 +82,7 @@ Agentic_AI_Assignment/
 
 ---
 
-## ⚙️ Installation
+## Installation
 
 ### 1. Clone the repository
 
@@ -155,7 +155,7 @@ Try asking questions such as:
 
 ---
 
-## 🧠 Agent Workflow
+##  Agent Workflow
 
 The application uses multiple AI agents coordinated through LangGraph:
 
@@ -168,7 +168,7 @@ The application uses multiple AI agents coordinated through LangGraph:
 
 ---
 
-## 📈 Future Improvements
+## Future Improvements
 
 - Conversation memory
 - Multi-document support
@@ -179,7 +179,7 @@ The application uses multiple AI agents coordinated through LangGraph:
 
 ---
 
-## 👩‍💻 Author
+##  Author
 
 **Iram Ishtiaq**
 
