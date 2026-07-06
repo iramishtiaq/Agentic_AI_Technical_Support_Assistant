@@ -1,4 +1,4 @@
-# 🤖 Agentic Technical Support Assistant
+# Agentic Technical Support Assistant
 
 ##  Project Overview
 
