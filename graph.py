@@ -22,7 +22,7 @@ from typing import TypedDict, List
 from typing import Literal
 from dotenv import load_dotenv
 load_dotenv()
-
+print("API key loaded:", os.getenv("OPENAI_API_KEY") is not None)
 class RelevanceGrade(BaseModel):
     relevance_score: Literal["yes", "no"] = Field(
         description="Whether the retrieved documents are relevant."
@@ -93,13 +93,20 @@ You are a QA Engineer responsible for validating document retrieval.
 
 Your task is NOT to answer the user's question.
 
-Your ONLY task is to determine whether the retrieved documents are relevant enough to continue.
+Determine whether the retrieved documents contain enough information
+to answer the user's question.
 
-Evaluation Rules:
+Return ONLY:
 
-- Return "yes" if one or more retrieved documents discuss the same product, feature, error code, LED status, troubleshooting step, or topic as the user's question.
-- Return "yes" even if the documents only partially answer the question.
-- Return "no" ONLY if the retrieved documents are completely unrelated.
+"yes"
+- if the retrieved documents contain sufficient information
+to answer the user's question.
+
+"no"
+- if the retrieved documents only mention the topic,
+- if they provide incomplete information,
+- if they do not fully answer the user's question,
+- or if additional information is needed.
 
 User Question:
 {question}
@@ -107,6 +114,7 @@ User Question:
 Retrieved Documents:
 {documents}
 """)
+
 document_grader = grade_prompt | structured_llm
 generate_prompt = ChatPromptTemplate.from_template("""
 You are an expert Technical Support Engineer.
@@ -204,25 +212,21 @@ def grade_documents(state):
     }
 
 def web_search(state):
-    """
-    Perform a web search and append the results
-    as a Document object.
-    """
+    print("\n========== WEB SEARCH NODE EXECUTED ==========\n")
 
     web_results = search_tool.invoke(state["optimized_query"])
+
+    print("WEB RESULTS:")
+    print(web_results)
 
     web_document = Document(
         page_content=str(web_results),
         metadata={"source": "web_search"}
     )
 
-    updated_documents = state.get("documents", []).copy()
-    updated_documents.append(web_document)
-
     return {
-        "documents": updated_documents
+        "documents": [web_document]
     }
-
 def generate_answer(state):
     """
     Support Specialist Agent
@@ -268,17 +272,27 @@ def hallucination_check(state):
     return {
         "hallucination_check": result.hallucination_check
     }
+def route_after_rewrite(state):
+    """
+    First pass:
+        rewrite -> retrieve
+
+    Retry:
+        rewrite -> web search
+    """
+
+    if state["loop_count"] == 0:
+        return "retrieve"
+
+    return "web"
 
 def route_after_grading(state):
-    """
-    Decide whether to generate an answer
-    or perform a web search.
-    """
 
     if state["relevance_score"] == "yes":
         return "generate"
 
-    return "web"
+    return "retry"
+
 def route_after_hallucination(state):
 
     if state["hallucination_check"] == "passed":
@@ -346,30 +360,45 @@ builder.add_edge(
     START,
     "rewrite_query"
 )
-builder.add_edge(
+
+builder.add_conditional_edges(
     "rewrite_query",
-    "retrieve_documents"
+    route_after_rewrite,
+    {
+        "retrieve": "retrieve_documents",
+        "web": "web_search",
+    }
 )
+
 builder.add_edge(
     "retrieve_documents",
     "grade_documents"
 )
+
 builder.add_conditional_edges(
     "grade_documents",
     route_after_grading,
     {
         "generate": "generate_answer",
-        "web": "web_search",
+        "retry": "increment_loop",
     }
 )
+
+builder.add_edge(
+    "increment_loop",
+    "rewrite_query"
+)
+
 builder.add_edge(
     "web_search",
     "generate_answer"
 )
+
 builder.add_edge(
     "generate_answer",
     "hallucination_check"
 )
+
 builder.add_conditional_edges(
     "hallucination_check",
     route_after_hallucination,
@@ -378,11 +407,6 @@ builder.add_conditional_edges(
         "retry": "increment_loop"
     }
 )
-builder.add_edge(
-    "increment_loop",
-    "rewrite_query"
-)
-
 def build_graph():
     return builder.compile()
 

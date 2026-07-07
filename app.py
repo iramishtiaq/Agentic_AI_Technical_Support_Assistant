@@ -51,27 +51,51 @@ if st.button("Get Answer"):
         "generation": "",
         "relevance_score": "",
         "hallucination_check": "",
-        "loop_count": 0
+        "loop_count": 0,
     }
+
+    workflow_steps = []
+    final_state = initial_state
 
     with st.spinner("Generating answer..."):
 
-        result = graph.invoke(initial_state)
+        for step in graph.stream(initial_state):
+
+            # Get node name
+            node_name = list(step.keys())[0]
+            workflow_steps.append(node_name)
+
+            # Update final state with node output
+            final_state.update(step[node_name])
 
     st.subheader("Answer")
+    st.success(final_state["generation"])
 
-    st.success(result["generation"])
-
-    with st.expander("Agent Workflow"):
+    with st.expander("Agent Workflow", expanded=True):
 
         st.write("### Optimized Query")
-        st.write(result["optimized_query"])
+        st.write(final_state["optimized_query"])
 
         st.write("### Relevance Score")
-        st.write(result["relevance_score"])
+        st.write(final_state["relevance_score"])
 
         st.write("### Hallucination Check")
-        st.write(result["hallucination_check"])
+        st.write(final_state["hallucination_check"])
 
         st.write("### Loop Count")
-        st.write(result["loop_count"])
+        st.write(final_state["loop_count"])
+
+        st.write("### Workflow Steps")
+
+        STEP_NAMES = {
+         "rewrite_query": "🔍 Query Rewrite Agent",
+         "retrieve_documents": "📚 Document Retrieval Agent",
+         "grade_documents": "✅ QA Validation Agent",
+         "increment_loop": "🔄 Correction Loop Triggered",
+         "web_search": "🌐 Web Search Agent",
+         "generate_answer": "🤖 Answer Generation Agent",
+         "hallucination_check": "🛡️ Hallucination Checker",
+        }
+
+        for i, step in enumerate(workflow_steps, start=1):
+         st.success(f"{i}. {STEP_NAMES.get(step, step)}")
